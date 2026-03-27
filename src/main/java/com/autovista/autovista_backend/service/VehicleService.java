@@ -2,6 +2,7 @@ package com.autovista.autovista_backend.service;
 
 import com.autovista.autovista_backend.dto.VehicleDetailDto;
 import com.autovista.autovista_backend.dto.VehicleResponseDto;
+import com.autovista.autovista_backend.dto.VehicleVariantDto;
 import com.autovista.autovista_backend.exception.ResourceNotFoundException;
 import com.autovista.autovista_backend.model.Vehicle;
 import com.autovista.autovista_backend.model.VehicleType;
@@ -56,17 +57,23 @@ public class VehicleService {
                 .orElseThrow(()->new ResourceNotFoundException("Vehicle not found with id: " + id));
         List<String> imageUrls = vehicle.getImage().stream()
                 .map(image -> image.getImageUrl()).toList();
+        List<VehicleVariantDto> variantDtos = vehicle.getVariants()
+                .stream()
+                .map(v->new VehicleVariantDto(
+                        v.getName(),
+                        v.getFuelType(),
+                        v.getTransmission(),
+                        v.getPrice()
+                )).toList();
         return new VehicleDetailDto(
                 vehicle.getId(),
                 vehicle.getName(),
                 vehicle.getBrand(),
-                vehicle.getPrice(),
-                vehicle.getFuelType(),
-                vehicle.getTransmission(),
                 vehicle.getDescription(),
                 vehicle.getThumbnailUrl(),
                 vehicle.getVehicleType(),
-                imageUrls
+                imageUrls,
+                variantDtos
         );
     }
     public Resource getVehicleBrochure(Long id) throws Exception{

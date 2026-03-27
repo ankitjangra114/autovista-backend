@@ -34,6 +34,11 @@ public class Vehicle {
     private List<VehicleImage> images;
     @OneToOne(mappedBy = "vehicle",cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     private VehicleDocument document;
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<VehicleVariant> variants;
+    public List<VehicleVariant> getVariants(){
+        return variants;
+    }
     public Long getId() { return id; }
     public String getName() { return name; }
     public String getBrand() { return brand; }
