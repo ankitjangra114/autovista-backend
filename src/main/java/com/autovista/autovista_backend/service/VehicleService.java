@@ -1,8 +1,6 @@
 package com.autovista.autovista_backend.service;
 
-import com.autovista.autovista_backend.dto.VehicleDetailDto;
-import com.autovista.autovista_backend.dto.VehicleResponseDto;
-import com.autovista.autovista_backend.dto.VehicleVariantDto;
+import com.autovista.autovista_backend.dto.*;
 import com.autovista.autovista_backend.exception.ResourceNotFoundException;
 import com.autovista.autovista_backend.model.Vehicle;
 import com.autovista.autovista_backend.model.VehicleType;
@@ -15,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -55,15 +54,40 @@ public class VehicleService {
     public VehicleDetailDto getVehicleById(Long id){
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Vehicle not found with id: " + id));
+
         List<String> imageUrls = vehicle.getImage().stream()
                 .map(image -> image.getImageUrl()).toList();
+
+        BigDecimal ex = vehicle.getPrice();
+        BigDecimal rto = ex.multiply(BigDecimal.valueOf(0.10));
+        BigDecimal insurance = ex.multiply(BigDecimal.valueOf(0.30));
+        BigDecimal other = BigDecimal.valueOf(10000);
+        BigDecimal onRoad = ex.add(rto).add(insurance).add(other);
+
+        BigDecimal downPayment = ex.multiply(BigDecimal.valueOf(0.20));
+        BigDecimal loanAmount = onRoad.subtract(downPayment);
+        double interestRate = 9.5;
+        int months = 60;
+        BigDecimal monthlyEmi = loanAmount
+                .multiply(BigDecimal.valueOf(1+(interestRate/100)))
+                .divide(BigDecimal.valueOf(months),2,BigDecimal.ROUND_HALF_UP);
+
+        VariantPricingDto pricing = new VariantPricingDto(
+                ex, rto, insurance,other, onRoad
+        );
+        VariantEmiDto emi = new VariantEmiDto(
+          downPayment, loanAmount, monthlyEmi, months, interestRate
+        );
+
         List<VehicleVariantDto> variantDtos = vehicle.getVariants()
                 .stream()
                 .map(v->new VehicleVariantDto(
                         v.getName(),
                         v.getFuelType(),
                         v.getTransmission(),
-                        v.getPrice()
+                        v.getPrice(),
+                        pricing,
+                        emi
                 )).toList();
         return new VehicleDetailDto(
                 vehicle.getId(),
